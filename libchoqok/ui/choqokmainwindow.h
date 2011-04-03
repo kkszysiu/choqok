@@ -33,6 +33,9 @@ class KTabWidget;
 namespace Choqok {
 
 namespace UI {
+namespace BlogsView {
+    enum MainView { Default, Panels };
+}
 class MicroBlogWidget;
 
 class CHOQOK_EXPORT MainWindow : public KXmlGuiWindow
@@ -48,6 +51,8 @@ public:
     Choqok::UI::MicroBlogWidget *currentMicroBlog();
     QList<Choqok::UI::MicroBlogWidget*> microBlogsWidgetsList();
     void activateTab( int k );
+
+    int getView() { return currView; }
 
 public Q_SLOTS:
     void showStatusMessage( const QString &message, bool isPermanent = false );
@@ -66,6 +71,8 @@ protected:
 
     KTabWidget *mainWidget;
     QTimer *timelineTimer;
+
+    int currView;
 };
 
 }

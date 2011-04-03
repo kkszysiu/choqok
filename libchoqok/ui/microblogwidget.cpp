@@ -41,6 +41,7 @@ along with this program; if not, see http://www.gnu.org/licenses/
 #include <QPointer>
 #include "choqoktextedit.h"
 #include <QLayout>
+#include <qtest_kde.h>
 
 namespace Choqok {
 namespace UI {
@@ -328,12 +329,29 @@ QLayout * MicroBlogWidget::createToolbar()
 //     connect( d->abortAll, SIGNAL(clicked(bool)), SLOT(slotAbortAllJobs()) );
 
     btnActions->setMenu(d->account->microblog()->createActionsMenu(d->account));
+    if (Choqok::UI::Global::mainWindow()->getView() == Choqok::UI::BlogsView::Panels) {
+        QLabel *blogicon = new QLabel();
+        blogicon->setPixmap(KIcon(d->account->microblog()->pluginIcon()).pixmap(16, 16));
+        d->toolbar->addWidget(blogicon);
+    }
     d->toolbar->addWidget(btnActions);
 //     toolbar->addWidget(d->abortAll);
     d->toolbar->addSpacerItem(new QSpacerItem(1, 10, QSizePolicy::Expanding));
     d->toolbar->addWidget(lblLatestUpdate);
     d->toolbar->addWidget(d->latestUpdate);
+    if (Choqok::UI::Global::mainWindow()->getView() == Choqok::UI::BlogsView::Panels) {
+        KPushButton *closeblogbutton = new KPushButton( KIcon("application-exit"), QString(), this );
+        //this->hide();
+        connect( closeblogbutton, SIGNAL( clicked() ), this, SLOT( closeBlog() ) );
+        d->toolbar->addWidget(closeblogbutton);
+    }
     return d->toolbar;
+}
+
+void MicroBlogWidget::closeBlog()
+{
+    kDebug();
+    delete this;
 }
 
 void MicroBlogWidget::slotAbortAllJobs()

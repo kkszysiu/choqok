@@ -74,6 +74,7 @@ MainWindow::MainWindow()
     setupActions();
     statusBar()->show();
     setupGUI();
+    mainHLayWidget = new QHBoxLayout();
 
     if ( Choqok::BehaviorSettings::updateInterval() > 0 )
         mPrevUpdateInterval = Choqok::BehaviorSettings::updateInterval();
@@ -83,7 +84,7 @@ MainWindow::MainWindow()
     connect( timelineTimer, SIGNAL( timeout() ), this, SIGNAL( updateTimelines() ) );
     connect( this, SIGNAL(markAllAsRead()), SLOT(slotMarkAllAsRead()) );
     connect( Choqok::AccountManager::self(), SIGNAL( accountAdded(Choqok::Account*)),
-             this, SLOT( addBlog(Choqok::Account*)));
+             this, SLOT( addBlog(Choqok::Account*, false, currView)));
     connect( Choqok::AccountManager::self(), SIGNAL( accountRemoved( const QString& ) ),
              this, SLOT( removeBlog(QString)) );
     connect( Choqok::AccountManager::self(), SIGNAL(allAccountsLoaded()),
@@ -236,6 +237,12 @@ void MainWindow::setupActions()
     actionCollection()->addAction( QLatin1String( "choqok_hide_menubar" ), hideMenuBar );
     hideMenuBar->setShortcut( KShortcut(Qt::ControlModifier | Qt::Key_M) );
     connect( hideMenuBar, SIGNAL(toggled(bool)), menuBar(), SLOT(setHidden(bool)) );
+
+    KAction* panelsView = new KAction( i18n("Panels View"), this );
+    panelsView->setCheckable(true);
+    actionCollection()->addAction( QLatin1String( "choqok_panels_view" ), panelsView );
+    panelsView->setShortcut( KShortcut(Qt::ControlModifier | Qt::Key_P) );
+    connect( panelsView, SIGNAL(toggled(bool)), this, SLOT(setPanelsView(bool)) );
 
     KAction *clearAvatarCache = new KAction(KIcon("edit-clear"), i18n( "Clear Avatar Cache" ), this );
     actionCollection()->addAction( QLatin1String( "choqok_clear_avatar_cache" ), clearAvatarCache );
@@ -420,7 +427,7 @@ void MainWindow::enableApp()
 //     actionCollection()->action( "choqok_now_listening" )->setEnabled( true );
 }
 
-void MainWindow::addBlog( Choqok::Account * account, bool isStartup )
+void MainWindow::addBlog( Choqok::Account * account, bool isStartup, int view )
 {
     kDebug() << "Adding new Blog, Alias: " << account->alias() << "Blog: " << account->microblog()->serviceName();
 
@@ -438,15 +445,23 @@ void MainWindow::addBlog( Choqok::Account * account, bool isStartup )
     connect( this, SIGNAL( markAllAsRead() ), widget, SLOT( markAllAsRead() ) );
     connect( this, SIGNAL(removeOldPosts()), widget, SLOT(removeOldPosts()) );
 //     kDebug()<<"Plugin Icon: "<<account->microblog()->pluginIcon();
-    mainWidget->addTab( widget, KIcon(account->microblog()->pluginIcon()), account->alias() );
+    if (view == Choqok::UI::BlogsView::Default) { 
+	mainWidget->addTab( widget, KIcon(account->microblog()->pluginIcon()), account->alias() );
+    } else if (view == Choqok::UI::BlogsView::Panels) {
+	mainHLayWidget->addWidget(widget);
+    }
 
     if( !isStartup )
         QTimer::singleShot( 1500, widget, SLOT( updateTimelines() ) );
     enableApp();
-    if( mainWidget->count() > 1)
-        mainWidget->setTabBarHidden(false);
-    else
-        mainWidget->setTabBarHidden(true);
+    if (view == Choqok::UI::BlogsView::Default) { 
+	if( mainWidget->count() > 1)
+	    mainWidget->setTabBarHidden(false);
+	else
+	    mainWidget->setTabBarHidden(true);
+    } else if (view == Choqok::UI::BlogsView::Panels) {
+	mainWidget->setTabBarHidden(true);
+    }
 }
 
 void MainWindow::removeBlog( const QString & alias )
@@ -514,6 +529,52 @@ void MainWindow::setTimeLineUpdatesEnabled( bool isEnabled )
     }
 }
 
+void MainWindow::setPanelsView( bool isEnabled )
+{
+    // TODO: Theres propoably nasty bug that didnt delete widgets but just hide them.
+    //       Better fix it ASAP, dude before your wild dragons will eat you alive
+    kDebug();
+    if ( isEnabled ) {
+        kDebug()<<"setPanelsView started";
+        currView = Choqok::UI::BlogsView::Panels;
+
+        int count2 = mainWidget->count();
+        kDebug() << "cnt:" << count2;
+        for(int i=0; i<=count2; ++i) {
+            //kDebug() << "iter:" << i;
+            mainWidget->removeTab(i);
+            if (mainWidget->widget(i)) {
+                Choqok::UI::MicroBlogWidget * tmp = qobject_cast<Choqok::UI::MicroBlogWidget *>( mainWidget->widget( i ) );
+                //tmp->deleteLater();
+                //delete mainWidget->widget(i);
+                delete tmp;
+                //kDebug() << "ok!";
+            }
+            //kDebug() << "end";
+        }
+
+        mainWidget->clear();
+        QWidget *w = new QWidget();
+        w->setLayout(mainHLayWidget);
+        mainWidget->addTab(w, "");
+
+        QList<Choqok::Account*> accList = Choqok::AccountManager::self()->accounts();
+        int count = microblogCounter = accList.count();
+        if( count > 0 ) {
+            for( int i=0; i < count; ++i ){
+                addBlog(accList.at(i), true, Choqok::UI::BlogsView::Panels);
+            }
+            kDebug()<<"All accounts loaded.";
+            if(Choqok::BehaviorSettings::updateInterval() > 0)
+                QTimer::singleShot(500, this, SIGNAL(updateTimelines()));
+        }
+        sysIcon->resetUnreadCount();
+    } else {
+        kDebug()<<"setPanelsView stoped";
+        currView = Choqok::UI::BlogsView::Default;
+    }
+}
+
 void MainWindow::setNotificationsEnabled( bool isEnabled )
 {
     kDebug();
@@ -547,11 +608,16 @@ void MainWindow::showEvent(QShowEvent* event)
 void MainWindow::slotMarkAllAsRead()
 {
     setWindowTitle( i18n("Choqok") );
-    sysIcon->resetUnreadCount();
-    int count = mainWidget->count();
-    for(int i=0; i<count; ++i) {
-        Choqok::UI::MicroBlogWidget *wd = qobject_cast<Choqok::UI::MicroBlogWidget*>(mainWidget->widget(i));
-        mainWidget->setTabText( i, wd->currentAccount()->alias() );
+    if (currView == Choqok::UI::BlogsView::Default) {
+        sysIcon->resetUnreadCount();
+        int count = mainWidget->count();
+        for(int i=0; i<count; ++i) {
+            Choqok::UI::MicroBlogWidget *wd = qobject_cast<Choqok::UI::MicroBlogWidget*>(mainWidget->widget(i));
+            mainWidget->setTabText( i, wd->currentAccount()->alias() );
+        }
+    } else if (currView == Choqok::UI::BlogsView::Panels) {
+        // TODO: rewrite it to support panels view!
+        sysIcon->resetUnreadCount();
     }
 }
 

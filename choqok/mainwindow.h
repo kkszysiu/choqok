@@ -25,9 +25,11 @@
 #define MAINWINDOW_H
 
 #include <kxmlguiwindow.h>
+#include <QHBoxLayout>
 #include "account.h"
 #include "choqokmainwindow.h"
 
+struct stat;
 class KAction;
 class KSplashScreen;
 namespace Choqok
@@ -78,10 +80,11 @@ private slots:
     void nextTab(int delta, Qt::Orientation orientation);
     void loadAllAccounts();
     void newPluginAvailable( Choqok::Plugin *plugin );
-    void addBlog( Choqok::Account *account, bool isStartup = false );
+    void addBlog( Choqok::Account *account, bool isStartup = false, int view = Choqok::UI::BlogsView::Default );
     void removeBlog( const QString &alias );
     void setTimeLineUpdatesEnabled( bool isEnabled );
     void setNotificationsEnabled( bool isEnabled );
+    void setPanelsView( bool isEnabled );
     void triggerQuickPost();
     void toggleMainWindow();
     void slotMarkAllAsRead();
@@ -100,7 +103,7 @@ private slots:
 
     //Using this for splash screen
     void oneMicroblogLoaded();
-    
+
 Q_SIGNALS:
     void quickPostCreated();
 
@@ -118,6 +121,7 @@ private:
     KSettings::Dialog *s_settingsDialog;
     KSplashScreen *m_splash;
     KAction *showMain;
+    QHBoxLayout *mainHLayWidget;
 
     int microblogCounter;
 };

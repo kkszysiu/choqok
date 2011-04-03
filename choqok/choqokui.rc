@@ -15,6 +15,7 @@
   <Menu name="settings"><text>Settings</text>
     <Action name="choqok_enable_updates"/>
     <Action name="choqok_hide_menubar"/>
+    <Action name="choqok_panels_view"/>
     <Action name="settings_notifications" append="configure_merge"/>
   </Menu>
 </MenuBar>

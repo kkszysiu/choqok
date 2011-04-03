@@ -125,6 +125,7 @@ protected Q_SLOTS:
                                 const QString &errorMsg, Choqok::MicroBlog::ErrorLevel level);
     void errorPost(Choqok::Account* theAccount, Choqok::Post*, Choqok::MicroBlog::ErrorType errorType,
                                     const QString &errorMsg, Choqok::MicroBlog::ErrorLevel level);
+    void closeBlog();
     void slotAbortAllJobs();
 
     virtual void keyPressEvent(QKeyEvent* );
