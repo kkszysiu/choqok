@@ -339,12 +339,12 @@ QLayout * MicroBlogWidget::createToolbar()
     d->toolbar->addSpacerItem(new QSpacerItem(1, 10, QSizePolicy::Expanding));
     d->toolbar->addWidget(lblLatestUpdate);
     d->toolbar->addWidget(d->latestUpdate);
-    if (Choqok::UI::Global::mainWindow()->getView() == Choqok::UI::BlogsView::Panels) {
-        KPushButton *closeblogbutton = new KPushButton( KIcon("application-exit"), QString(), this );
-        //this->hide();
-        connect( closeblogbutton, SIGNAL( clicked() ), this, SLOT( closeBlog() ) );
-        d->toolbar->addWidget(closeblogbutton);
-    }
+//     if (Choqok::UI::Global::mainWindow()->getView() == Choqok::UI::BlogsView::Panels) {
+//         KPushButton *closeblogbutton = new KPushButton( KIcon("application-exit"), QString(), this );
+//         //this->hide();
+//         connect( closeblogbutton, SIGNAL( clicked() ), this, SLOT( closeBlog() ) );
+//         d->toolbar->addWidget(closeblogbutton);
+//     }
     return d->toolbar;
 }
 

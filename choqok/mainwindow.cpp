@@ -432,8 +432,12 @@ void MainWindow::addBlog( Choqok::Account * account, bool isStartup, int view )
     kDebug() << "Adding new Blog, Alias: " << account->alias() << "Blog: " << account->microblog()->serviceName();
 
     Choqok::UI::MicroBlogWidget *widget = account->microblog()->createMicroBlogWidget(account, this);
-    connect(widget, SIGNAL(loaded()), SLOT(oneMicroblogLoaded()));
-    connect( widget, SIGNAL(updateUnreadCount(int,int)), SLOT(slotUpdateUnreadCount(int,int)) );
+    connect( widget, SIGNAL(loaded()), SLOT(oneMicroblogLoaded()) );
+    if (view == Choqok::UI::BlogsView::Default) {
+        connect( widget, SIGNAL(updateUnreadCount(int,int)), SLOT(slotUpdateUnreadCount(int,int)) );
+    } else if (view == Choqok::UI::BlogsView::Panels) {
+        // TODO: find a way to count unread blog posts in correct way
+    }
     widget->initUi();
 
 //     connect( widget, SIGNAL( sigSetUnread( int ) ), sysIcon, SLOT( slotSetUnread( int ) ) );
@@ -443,9 +447,9 @@ void MainWindow::addBlog( Choqok::Account * account, bool isStartup, int view )
 
     connect( this, SIGNAL( updateTimelines() ), widget, SLOT( updateTimelines() ) );
     connect( this, SIGNAL( markAllAsRead() ), widget, SLOT( markAllAsRead() ) );
-    connect( this, SIGNAL(removeOldPosts()), widget, SLOT(removeOldPosts()) );
+    connect( this, SIGNAL( removeOldPosts() ), widget, SLOT( removeOldPosts() ) );
 //     kDebug()<<"Plugin Icon: "<<account->microblog()->pluginIcon();
-    if (view == Choqok::UI::BlogsView::Default) { 
+    if (view == Choqok::UI::BlogsView::Default) {
 	mainWidget->addTab( widget, KIcon(account->microblog()->pluginIcon()), account->alias() );
     } else if (view == Choqok::UI::BlogsView::Panels) {
 	mainHLayWidget->addWidget(widget);
